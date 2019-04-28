@@ -1,7 +1,5 @@
 package com.moh.spaceinvader.game;
 
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.scene.CacheHint;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -9,16 +7,18 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
+import java.sql.Time;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Random;
 
 import com.moh.spaceinvader.engine.Entity;
@@ -32,8 +32,10 @@ public class SapceInvaderUniverse extends GameUniverse {
     TextField xCoordinate = new TextField("234");
     TextField yCoordinate = new TextField("200");
     Button moveShipButton = new Button("Rotate ship");
+    int atomsPassTheSip=0;
+    int MAX_ATOMS_PASS_SHIP=10;
 
-    Ship myShip = new Ship();
+    Ship myShip;
 
     public SapceInvaderUniverse(int fps, String title) {
         super(fps, title);
@@ -49,124 +51,51 @@ public class SapceInvaderUniverse extends GameUniverse {
         setGameSurface(new Scene(getSceneNodes(), 800, 600));
         getGameSurface().setFill(Color.BLACK);
         primaryStage.setScene(getGameSurface());
-        // Setup Game input
-        setupInput(primaryStage);
-
-
-        // Create many spheres
-        generateManySpheres(2);
-
-        // Display the number of spheres visible.
-        // Create a button to add more spheres.
-        // Create a button to freeze the game loop.
-        //final Timeline gameLoop = getGameLoop();
+        
+        myShip = new Ship();
+        
         getEntityController().addEntities(myShip);
         getSceneNodes().getChildren().add(0, myShip.node);
 
-        // mouse point
-        VBox stats = new VBox();
+        // Setup Game input
+        setupInput(primaryStage);
 
-        HBox row1 = new HBox();
-        mousePtLabel.setTextFill(Color.WHITE);
-        row1.getChildren().add(mousePtLabel);
-        HBox row2 = new HBox();
-        mousePressPtLabel.setTextFill(Color.WHITE);
-        row2.getChildren().add(mousePressPtLabel);
-
-        stats.getChildren().add(row1);
-        stats.getChildren().add(row2);
-
-        // mouse point
-        HBox enterCoord1 = new HBox();
-        enterCoord1.getChildren().add(xCoordinate);
-        enterCoord1.getChildren().add(yCoordinate);
-        enterCoord1.getChildren().add(moveShipButton);
-        stats.getChildren().add(enterCoord1);
-        moveShipButton.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent actionEvent) {
-                double x = Double.parseDouble(xCoordinate.getText());
-                double y = Double.parseDouble(yCoordinate.getText());
-                myShip.plotCourse(x, y, false);
-            }
-        });
+        // Create many spheres
+        generateManySpheres(5, 1);
 
         // load sound file
         getSoundPlayer().loadSoundEffects("laser", getClass().getClassLoader().getResource("laser_2.mp3"));
 
-        // ===================================================
-        // Debugging purposes
-        // uncomment to test mouse press and rotation angles.
-        //getSceneNodes().getChildren().add(stats);
+      
     }
 
+    public void createEntities() {
+    	Random rnd = new Random();
+      if (getEntityController().getAtomCount() <= 3)
+    	  generateManySpheres(rnd.nextInt(5), (rnd.nextInt(1)+rnd.nextDouble()+1));
+    }
     private void setupInput(Stage primaryStage) {
-        System.out.println("Ship's center is (" + myShip.getCenterX() + ", " + myShip.getCenterY() + ")");
-
-        EventHandler fireOrMove = new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent event) {
-                mousePressPtLabel.setText("Mouse Press PT = (" + event.getX() + ", " + event.getY() + ")");
-                if (event.getButton() == MouseButton.PRIMARY) {
-                    // Aim
-                    myShip.plotCourse(event.getX(), event.getY(), false);
-                    // fire
-                    Missile m1 = myShip.fire();
-                    getEntityController().addEntities(m1);
-
+    	getGameSurface().setOnKeyPressed(e -> {
+            switch (e.getCode()) {
+                case A:
+                	myShip.moveLeft();
+                    break;
+                case D:
+                	myShip.moveRight(getGameSurface().getWidth());
+                    break;
+                case L:
+                	Missile m1 = myShip.fire();
+                	getEntityController().addEntities(m1);
                     // play sound
                     getSoundPlayer().playSound("laser");
-                    
 
                     getSceneNodes().getChildren().add(0, m1.node);
-
-
-                } else if (event.getButton() == MouseButton.SECONDARY) {
-                    // determine when all atoms are not on the game surface. Ship should be one sprite left.
-                    if (getEntityController().getAllEntities().size() <= 1) {
-                        generateManySpheres(30);
-                    }
-
-                    // stop ship from moving forward
-                    myShip.applyTheBrakes(event.getX(), event.getY());
-                    // move forward and rotate ship
-                    myShip.plotCourse(event.getX(), event.getY(), true);
-                }
-
+                    break;
             }
-        };
+        });
 
-
-        // Initialize input
-        primaryStage.getScene().setOnMousePressed(fireOrMove);
-        //addEventHandler(MouseEvent.MOUSE_PRESSED, me);
-
-        // set up stats
-        EventHandler changeWeapons = new EventHandler<KeyEvent>() {
-            @Override
-            public void handle(KeyEvent event) {
-                if (KeyCode.SPACE == event.getCode()) {
-                    myShip.shieldToggle();
-                    return;
-                }
-                myShip.changeWeapon(event.getCode());
-
-            }
-        };
-        primaryStage.getScene().setOnKeyPressed(changeWeapons);
-
-
-        // set up stats
-        EventHandler showMouseMove = new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent event) {
-                mousePtLabel.setText("Mouse PT = (" + event.getX() + ", " + event.getY() + ")");
-            }
-        };
-
-        primaryStage.getScene().setOnMouseMoved(showMouseMove);
     }
-    private void generateManySpheres(int numSpheres) {
+    private void generateManySpheres(int numSpheres, double speed) {
         Random rnd = new Random();
         Scene gameSurface = getGameSurface();
         for (int i = 0; i < numSpheres; i++) {
@@ -174,8 +103,8 @@ public class SapceInvaderUniverse extends GameUniverse {
             Atom b = new Atom(rnd.nextInt(15) + 5, c, true);
             Circle circle = b.getAsCircle();
             // random 0 to 2 + (.0 to 1) * random (1 or -1)
-            b.vX = (rnd.nextInt(2) + rnd.nextDouble()) * (rnd.nextBoolean() ? 1 : -1);
-            b.vY = (rnd.nextInt(2) + rnd.nextDouble()) * (rnd.nextBoolean() ? 1 : -1);
+            b.vX = 0;
+            b.vY = speed;
 
             // random x between 0 to width of scene
             double newX = rnd.nextInt((int) gameSurface.getWidth());
@@ -188,10 +117,11 @@ public class SapceInvaderUniverse extends GameUniverse {
 
             // check for the bottom of screen the height newY is greater than height 
             // minus radius times 2(height of sprite)
-            double newY = rnd.nextInt((int) gameSurface.getHeight());
+            double newY = -10;
             if (newY > (gameSurface.getHeight() - (circle.getRadius() * 2))) {
                 newY = gameSurface.getHeight() - (circle.getRadius() * 2);
             }
+       
 
             circle.setTranslateX(newX);
             circle.setTranslateY(newY);
@@ -200,10 +130,8 @@ public class SapceInvaderUniverse extends GameUniverse {
             circle.setCache(true);
             circle.setCacheHint(CacheHint.SPEED);
             circle.setManaged(false);
-            // add to actors in play (sprite objects)
-            getEntityController().addEntities(b);
 
-            // add sprite's 
+            getEntityController().addEntities(b); 
             getSceneNodes().getChildren().add(b.node);
 
         }
@@ -215,20 +143,40 @@ public class SapceInvaderUniverse extends GameUniverse {
     	entity.update();
         if (entity instanceof Missile) {
             removeMissiles((Missile) entity);
-        } else {
+        }if (entity instanceof Atom) {
+            removeAtom((Atom) entity);
+        } else if (entity instanceof Ship){
             bounceOffWalls(entity);
         }
+        
+        checkforGameEnd();
     }
 
+    private void checkforGameEnd() {
+    	if (atomsPassTheSip >= MAX_ATOMS_PASS_SHIP)
+    	{
+    		gameOver();
+    	}
+    }
+    
+    private void gameOver() {
+    	
+    	Text gameOver = new Text("GAME OVER !");
+		gameOver.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 50));
+		gameOver.setFill(Color.RED);
+		gameOver.setStroke(Color.BLACK);
+		gameOver.setStrokeWidth(3);
+		gameOver.setX(90);
+		gameOver.setY(300);
+		
+		getSceneNodes().getChildren().add(gameOver);
+		getSoundPlayer().playSound("laser");
+		this.getGameLoop().stop();
+    }
     private void bounceOffWalls(Entity entity) {
         // bounce off the walls when outside of boundaries
 
-        Node displayNode;
-        if (entity instanceof Ship) {
-            displayNode = entity.node;//((Ship)sprite).getCurrentShipImage();
-        } else {
-            displayNode = entity.node;
-        }
+        Node displayNode = entity.node;
         // Get the group node's X and Y but use the ImageView to obtain the width.
         if (entity.node.getTranslateX() > (getGameSurface().getWidth() - displayNode.getBoundsInParent().getWidth()) ||
                 displayNode.getTranslateX() < 0) {
@@ -245,35 +193,42 @@ public class SapceInvaderUniverse extends GameUniverse {
     }
 
     private void removeMissiles(Missile missile) {
-        // bounce off the walls when outside of boundaries
-        if (missile.node.getTranslateX() > (getGameSurface().getWidth() -
-                missile.node.getBoundsInParent().getWidth()) ||
-                missile.node.getTranslateX() < 0) {
-
-            getEntityController().addEntitiesToBeRemoved(missile);
-            getSceneNodes().getChildren().remove(missile.node);
-
-        }
+    
         if (missile.node.getTranslateY() > getGameSurface().getHeight() -
                 missile.node.getBoundsInParent().getHeight() ||
                 missile.node.getTranslateY() < 0) {
 
             getEntityController().addEntitiesToBeRemoved(missile);
             getSceneNodes().getChildren().remove(missile.node);
+          
         }
     }
 
+    
+    private void removeAtom(Atom atom) {
+        
+        if (atom.node.getTranslateY() > getGameSurface().getHeight()) {
+            getEntityController().addEntitiesToBeRemoved(atom);
+            getSceneNodes().getChildren().remove(atom.node);
+            atomsPassTheSip++;
+        }
+    }
  
     @Override
     protected boolean handleCollision(Entity entityA, Entity entityB) {
         if (entityA != entityB) {
             if (entityA.collide(entityB)) {
 
-                if (entityA != myShip) {
-                	entityA.handleDeath(this);
-                }
-                if (entityB != myShip) {
+                if (entityA == myShip || entityB == myShip) {
+                	if (entityA.getName().equals("Atom") || entityB.getName().equals("Atom")) {
+                	   entityA.handleDeath(this);
+                	   entityB.handleDeath(this);
+                	   gameOver();
+                	   
+                	}
+                }else {
                 	entityB.handleDeath(this);
+                	entityA.handleDeath(this);
                 }
             }
         }

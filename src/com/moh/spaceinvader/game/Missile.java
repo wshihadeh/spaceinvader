@@ -10,4 +10,8 @@ public class Missile extends Atom {
     public Missile(int radius, Color fill) {
         super(radius, fill, true);
     }
+    
+    public String getName() {
+    	return "Missile";
+    } 
 }

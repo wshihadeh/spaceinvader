@@ -12,6 +12,16 @@ public class EntityController {
 		return GAME_ACTORS;
 	}
 
+	
+	public int getAtomCount() {
+		int count =0;
+	  for(int i =0; i<GAME_ACTORS.size() ; i++) {
+		  if (GAME_ACTORS.get(i).getName().equals("Atom"))
+			  count++;
+	  }
+	  return count;
+	}
+	
 	public void addEntities(Entity... entities) {
 		GAME_ACTORS.addAll(Arrays.asList(entities));
 	}

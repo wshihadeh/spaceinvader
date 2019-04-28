@@ -13,6 +13,7 @@ public abstract class Entity {
 	public Circle collisionBounds;
 
 	public abstract void update();
+	public abstract String getName();
 	public boolean collide(Entity other) {
 
 		if (collisionBounds == null || other.collisionBounds == null) {

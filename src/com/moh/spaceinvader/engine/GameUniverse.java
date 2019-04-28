@@ -38,6 +38,7 @@ public abstract class GameUniverse {
 
                     @Override
                     public void handle(javafx.event.ActionEvent event) {
+                    	createEntities();
                         updateEntities();
                         checkCollisions();
                         cleanupEntities();
@@ -85,6 +86,9 @@ public abstract class GameUniverse {
     protected void cleanupEntities() {
         entityController.cleanupEntities();
     }
+    
+    
+    public abstract void createEntities();
 
     protected int getFramesPerSecond() {
         return framesPerSecond;

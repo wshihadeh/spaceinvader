@@ -78,4 +78,8 @@ public class Atom extends Entity {
         implode(gameUniverse);
         super.handleDeath(gameUniverse);
     }
+    
+    public String getName() {
+    	return "Atom";
+    } 
 }
